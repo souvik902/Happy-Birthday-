@@ -163,7 +163,7 @@ body.intro-opened #hero{animation:pageArrive .9s cubic-bezier(.2,.75,.25,1) both
 </style>
 </head>
 <body>
-<div id="introScreen" class="intro-screen"><iframe id="introAnimation" title="Opening heart animation" srcdoc="&lt;!DOCTYPE html&gt;
+<div id="introScreen" class="intro-screen"><iframe id="introAnimation" title="Opening heart animation" allow="autoplay" srcdoc="&lt;!DOCTYPE html&gt;
 &lt;html lang=&quot;en&quot;&gt;
 &lt;head&gt;
 &lt;meta charset=&quot;utf-8&quot;&gt;
@@ -242,7 +242,7 @@ function aim(){
 
 cv.addEventListener(&#x27;pointerdown&#x27;, e =&gt; {
   if (state !== &#x27;aim&#x27;) return;
-  if (!shown) parent.postMessage({type:&#x27;birthday-intro-start&#x27;}, &#x27;*&#x27;);
+  if (!shown) { try { parent.startBirthdayMusicFromGesture(); } catch {} parent.postMessage({type:&#x27;birthday-intro-start&#x27;}, &#x27;*&#x27;); }
   drag = true; px = sx = e.clientX; py = sy = e.clientY; cv.setPointerCapture(e.pointerId);
   if (!shown) { shown = true; hintEl.style.opacity = 0; }
 });
@@ -512,8 +512,9 @@ render();
 /* Try autoplay; if the browser blocks it, offer a tap to start from the beginning. */
 const bgm=$('#bgm'),musicStart=$('#musicStart');
 let introOpened=false, introMusicStarted=false;
-function startMusic(){if(!bgm.src)bgm.src=bgm.dataset.src;bgm.play().then(()=>musicStart.hidden=true).catch(()=>musicStart.hidden=false)}
-musicStart.onclick=startMusic;
+function startMusic(fromGesture=false){if(!bgm.src)bgm.src=bgm.dataset.src;if(fromGesture&&bgm.readyState>0)bgm.currentTime=0;bgm.muted=false;bgm.play().then(()=>musicStart.hidden=true).catch(()=>musicStart.hidden=false)}
+window.startBirthdayMusicFromGesture=()=>{if(!introMusicStarted){introMusicStarted=true;startMusic(true)}};
+musicStart.onclick=()=>startMusic(true);
 window.addEventListener('message',e=>{
   if(e.source!==$('#introAnimation').contentWindow)return;
   if(e.data?.type==='birthday-intro-start'&&!introMusicStarted){introMusicStarted=true;startMusic()}
@@ -554,9 +555,11 @@ $('#fs').onclick=async()=>{
 };
 /* floating hearts and petals */
 const hs=['💖','💗','🌸','✨','💝','🌷'];
-setInterval(()=>{const e=document.createElement('span');e.className='h';e.textContent=hs[Math.random()*hs.length|0];
+const mobileFX=matchMedia('(max-width:600px)').matches;
+setInterval(()=>{if(document.hidden)return;const fx=$('#fx'),limit=mobileFX?7:14;if(fx.childElementCount>=limit)fx.firstElementChild.remove();
+  const e=document.createElement('span');e.className='h';e.textContent=hs[Math.random()*hs.length|0];
   e.style.left=Math.random()*100+'%';e.style.fontSize=(14+Math.random()*24)+'px';e.style.animationDuration=(7+Math.random()*7)+'s';
-  $('#fx').append(e);setTimeout(()=>e.remove(),15000)},1000);
+  fx.append(e);setTimeout(()=>e.remove(),15000)},mobileFX?1800:1000);
 /* letter */
 const env=$('#env');
 function open(){if(env.classList.contains('open'))return;env.classList.add('open');$('#eh').hidden=true;setTimeout(()=>$('#lw').classList.add('open'),500)}
