@@ -242,7 +242,7 @@ function aim(){
 
 cv.addEventListener(&#x27;pointerdown&#x27;, e =&gt; {
   if (state !== &#x27;aim&#x27;) return;
-  if (!shown) { try { parent.startBirthdayMusicFromGesture(); } catch {} parent.postMessage({type:&#x27;birthday-intro-start&#x27;}, &#x27;*&#x27;); }
+  
   drag = true; px = sx = e.clientX; py = sy = e.clientY; cv.setPointerCapture(e.pointerId);
   if (!shown) { shown = true; hintEl.style.opacity = 0; }
 });
@@ -260,7 +260,7 @@ function release(){
   if (a.pull &gt;= 35) fire(a.d, a.pull);
   else if (Math.hypot(sx - bx, sy - by) &lt; 130) fire(a.d, 100); // tap on the bow or arrow shoots it
 }
-cv.addEventListener(&#x27;pointerup&#x27;, release);
+cv.addEventListener(&#x27;pointerup&#x27;, e =&gt; { try { parent.startBirthdayMusicFromGesture(); } catch {} release(); });
 cv.addEventListener(&#x27;pointercancel&#x27;, () =&gt; { drag = false; });
 
 document.getElementById(&#x27;again&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; {
@@ -512,12 +512,11 @@ render();
 /* Try autoplay; if the browser blocks it, offer a tap to start from the beginning. */
 const bgm=$('#bgm'),musicStart=$('#musicStart');
 let introOpened=false, introMusicStarted=false;
-function startMusic(fromGesture=false){if(!bgm.src)bgm.src=bgm.dataset.src;if(fromGesture&&bgm.readyState>0)bgm.currentTime=0;bgm.muted=false;bgm.play().then(()=>musicStart.hidden=true).catch(()=>musicStart.hidden=false)}
-window.startBirthdayMusicFromGesture=()=>{if(!introMusicStarted){introMusicStarted=true;startMusic(true)}};
+function startMusic(fromGesture=false){if(!bgm.src)bgm.src=bgm.dataset.src;if(fromGesture&&bgm.readyState>0)bgm.currentTime=0;bgm.muted=false;bgm.play().then(()=>{introMusicStarted=true;musicStart.hidden=true}).catch(()=>{introMusicStarted=false;musicStart.hidden=false})}
+window.startBirthdayMusicFromGesture=()=>{if(!introMusicStarted)startMusic(true)};
 musicStart.onclick=()=>startMusic(true);
 window.addEventListener('message',e=>{
   if(e.source!==$('#introAnimation').contentWindow)return;
-  if(e.data?.type==='birthday-intro-start'&&!introMusicStarted){introMusicStarted=true;startMusic()}
   if(e.data?.type==='birthday-intro-done'&&!introOpened){introOpened=true;const intro=$('#introScreen');intro.classList.add('gone');document.body.classList.add('intro-opened');setTimeout(()=>{intro.hidden=true;document.body.style.overflow='';},900)}
 });
 document.body.style.overflow='hidden';
