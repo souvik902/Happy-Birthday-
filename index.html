@@ -12,6 +12,10 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 @media (prefers-color-scheme:dark){:root{--night:#150820}}
 html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
 *{box-sizing:border-box}
+html.low-power .gold{animation:none}
+html.low-power .ring,.low-power .sp{animation:none}
+html.low-power .dancing-cat{filter:none}
+html.low-power body{background-attachment:scroll}
 html,body{margin:0}
 body{font-family:var(--serif);font-size:20px;line-height:1.5;color:var(--blush);overflow-x:hidden;
 background:radial-gradient(ellipse at 50% -10%,var(--wine),transparent 60%),radial-gradient(ellipse at 90% 100%,#3b1458,transparent 55%),var(--night) fixed}
@@ -203,10 +207,11 @@ document.getElementById(&#x27;msg&#x27;).textContent = MESSAGE;
 const cv = document.getElementById(&#x27;c&#x27;), g = cv.getContext(&#x27;2d&#x27;);
 const titleEl = document.getElementById(&#x27;title&#x27;), hintEl = document.getElementById(&#x27;hint&#x27;), endEl = document.getElementById(&#x27;end&#x27;);
 let W, H, dpr, hx, hy, s, bx, by;
+const LOW_POWER=(navigator.deviceMemory||4)&lt;=4||(navigator.hardwareConcurrency||4)&lt;=4||navigator.connection?.saveData===true;
 const ARROW = 78, MAXPULL = 140;
 
 function layout(){
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  dpr = Math.min(window.devicePixelRatio || 1, LOW_POWER ? 1.25 : 2);
   W = innerWidth; H = innerHeight;
   cv.width = W * dpr; cv.height = H * dpr;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -309,7 +314,7 @@ function drawHeart(t, scale){
 
 function burst(){
   const cols = [&#x27;#e0286e&#x27;, &#x27;#ff7aa8&#x27;, &#x27;#ffb3cf&#x27;, &#x27;#b3154f&#x27;, &#x27;#f58fb8&#x27;];
-  for (let i = 0; i &lt; 40; i++) {
+  for (let i = 0; i &lt; (LOW_POWER ? 18 : 40); i++) {
     parts.push({ x: hx, y: hy, a: 0, tx: 40 + Math.random() * (W - 80), ty: 40 + Math.random() * (H - 80),
       delay: Math.random() * .4, ph: Math.random() * 6.283, sp: 9 + Math.random() * 6,
       r: 10 + Math.random() * 14, c: cols[i % 5] });
@@ -334,8 +339,9 @@ function flutter(p, t){
   g.restore();
 }
 
-let rafId = 0, last = 0;
+let rafId = 0, last = 0, frameCount = 0;
 function frame(ms){
+  if (LOW_POWER &amp;&amp; frameCount++ % 2) { rafId = requestAnimationFrame(frame); return; }
   const t = ms / 1000, dt = Math.min(.033, t - (last || t)); last = t;
   g.clearRect(0, 0, W, H);
 
@@ -481,6 +487,8 @@ rafId = requestAnimationFrame(frame);
 
 <script>
 const SRC='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+const lowPowerMode=(navigator.deviceMemory||4)<=4||(navigator.hardwareConcurrency||4)<=4||navigator.connection?.saveData===true;
+document.documentElement.classList.toggle('low-power',lowPowerMode);
 const $=s=>document.querySelector(s);
 const cfg=JSON.parse($('#cfg').textContent);
 const CAPS=["Where it began","Our favorite day","A trip to remember","Pure laughter","Just us","Many more to come"];
@@ -554,7 +562,7 @@ $('#fs').onclick=async()=>{
 };
 /* floating hearts and petals */
 const hs=['💖','💗','🌸','✨','💝','🌷'];
-const mobileFX=matchMedia('(max-width:600px)').matches;
+const mobileFX=matchMedia('(max-width:600px)').matches||lowPowerMode;
 setInterval(()=>{if(document.hidden)return;const fx=$('#fx'),limit=mobileFX?7:14;if(fx.childElementCount>=limit)fx.firstElementChild.remove();
   const e=document.createElement('span');e.className='h';e.textContent=hs[Math.random()*hs.length|0];
   e.style.left=Math.random()*100+'%';e.style.fontSize=(14+Math.random()*24)+'px';e.style.animationDuration=(7+Math.random()*7)+'s';
@@ -565,7 +573,7 @@ function open(){if(env.classList.contains('open'))return;env.classList.add('open
 env.onclick=open;env.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}};
 /* confetti */
 function confetti(){const c=['#ff9db9','#f2cf8a','#fff','#ff5f8f','#c9a6ff'];
-  for(let i=0;i<70;i++){const e=document.createElement('i');e.className='cf';e.style.left=Math.random()*100+'vw';e.style.background=c[i%5];
+  for(let i=0;i<(lowPowerMode?24:70);i++){const e=document.createElement('i');e.className='cf';e.style.left=Math.random()*100+'vw';e.style.background=c[i%5];
     e.style.animationDuration=(2+Math.random()*2.5)+'s';e.style.animationDelay=Math.random()*.6+'s';document.body.append(e);setTimeout(()=>e.remove(),5500)}}
 /* cake */
 let lit=5;
